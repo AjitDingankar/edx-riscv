@@ -6,38 +6,12 @@
    m4_include_lib(['https://raw.githubusercontent.com/stevehoover/LF-Building-a-RISC-V-CPU-Core/main/lib/risc-v_shell_lib.tlv'])
 
 
-
    //---------------------------------------------------------------------------------
-   // /====================\
-   // | Sum 1 to 9 Program |
-   // \====================/
-   //
-   // Program to test RV32I
-   // Add 1,2,3,...,9 (in that order).
-   //
-   // Regs:
-   //  x12 (a2): 10
-   //  x13 (a3): 1..10
-   //  x14 (a4): Sum
+   // Program to test all RV32I instructions 
    // 
-   m4_asm(ADDI, x14, x0, 0)             // Initialize sum register a4 with 0
-   m4_asm(ADDI, x12, x0, 1010)          // Store count of 10 in register a2.
-   m4_asm(ADDI, x13, x0, 1)             // Initialize loop count register a3 with 0
-   // Loop:
-   m4_asm(ADD, x14, x13, x14)           // Incremental summation
-   m4_asm(ADDI, x13, x13, 1)            // Increment loop count by 1
-   m4_asm(BLT, x13, x12, 1111111111000) // If a3 is less than a2, branch to label named <loop>
-   // Test result value in x14, and set x31 to reflect pass/fail.
-
-   // Dummy instruction to check that x0 is Read-Only, always returning 0.
-   // m4_asm(ADDI, x0, x0, 00101100)
-
-   m4_asm(ADDI, x30, x14, 111111010100) // Subtract expected value of 44 to set x30 to 1 if and only iff the result is 45 (1 + 2 + ... + 9).
-   m4_asm(BGE, x0, x0, 0) // Done. Jump to itself (infinite loop). (Up to 20-bit signed immediate plus implicit 0 bit (unlike JALR) provides byte address; last immediate bit should also be 0)
-   m4_asm_end()
-   m4_define(['M4_MAX_CYC'], 50)
+   m4_test_prog()
+   // m4_define(['M4_MAX_CYC'], 50)
    //---------------------------------------------------------------------------------
-
 
 
 \SV
@@ -56,7 +30,7 @@
    // Fetch
    `READONLY_MEM($pc, $$instr[31:0])
    
-   // Decode
+   // Instruction Format Decode
    $is_r_instr = (
       $instr[6:2] == 5'b01011 ||
       $instr[6:2] == 5'b01100 ||
@@ -117,6 +91,32 @@
 
    $is_addi = $dec_bits ==? 11'bx_000_0010011;
    $is_add  = $dec_bits ==? 11'b0_000_0110011;
+
+   $is_lui   = $opcode ==? 7'b01101_11;
+   $is_auipc = $opcode ==? 7'b00101_11;
+   $is_jal   = $opcode ==? 7'b11011_11;
+
+   $is_jalr  = $dec_bits ==? 11'bx_000_1100111;
+   $is_slti  = $dec_bits ==? 11'bx_010_0010011;
+   $is_sltiu = $dec_bits ==? 11'bx_011_0010011;
+   $is_xori  = $dec_bits ==? 11'bx_100_0010011;
+   $is_ori   = $dec_bits ==? 11'bx_110_0010011;
+   $is_andi  = $dec_bits ==? 11'bx_111_0010011;
+   $is_slli  = $dec_bits ==? 11'b0_001_0010011;
+   $is_srli  = $dec_bits ==? 11'b0_101_0010011;
+   $is_srai  = $dec_bits ==? 11'b1_101_0010011;
+   $is_sub   = $dec_bits ==? 11'b1_000_0110011;
+   $is_sll   = $dec_bits ==? 11'b0_001_0110011;
+   $is_slt   = $dec_bits ==? 11'b0_010_0110011;
+   $is_sltu  = $dec_bits ==? 11'b0_011_0110011;
+   $is_xor   = $dec_bits ==? 11'b0_100_0110011;
+   $is_srl   = $dec_bits ==? 11'b0_101_0110011;
+   $is_sra   = $dec_bits ==? 11'b1_101_0110011;
+   $is_or    = $dec_bits ==? 11'b0_110_0110011;
+   $is_and   = $dec_bits ==? 11'b0_111_0110011;
+
+   `BOGUS_USE($is_load_instr)
+   $is_load = ($opcode == 7'b00000_11);
 
    // ALU
    $result[31:0] =
