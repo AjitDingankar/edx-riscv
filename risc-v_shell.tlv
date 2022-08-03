@@ -30,7 +30,7 @@
    // Test result value in x14, and set x31 to reflect pass/fail.
 
    // Dummy instruction to check that x0 is Read-Only, always returning 0.
-   m4_asm(ADDI, x0, x0, 00101100)
+   // m4_asm(ADDI, x0, x0, 00101100)
 
    m4_asm(ADDI, x30, x14, 111111010100) // Subtract expected value of 44 to set x30 to 1 if and only iff the result is 45 (1 + 2 + ... + 9).
    m4_asm(BGE, x0, x0, 0) // Done. Jump to itself (infinite loop). (Up to 20-bit signed immediate plus implicit 0 bit (unlike JALR) provides byte address; last immediate bit should also be 0)
