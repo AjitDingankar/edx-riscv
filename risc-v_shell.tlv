@@ -23,7 +23,8 @@
    
    // PC Logic
    $next_pc[31:0] = $reset ? 0 :
-      $taken_br ? $br_tgt_pc : //Branch taken
+      ($taken_br || $is_jal) ? $br_tgt_pc : // Branch taken or jump-and-link
+      $is_jalr ? $jalr_tgt_pc : // jump-and-link-register
       ($pc + 4); // Next instr
    $pc[31:0] = >>1$next_pc;
    
@@ -167,9 +168,11 @@
       $is_bge ? ($src1_value >= $src2_value) ^ ($src1_value[31] != $src2_value[31]):
       $is_bltu ? ($src1_value <  $src2_value) :
       $is_bgeu ? ($src1_value >= $src2_value) :
+      // ($is_jal || $is_jalr); // Jumps are taken unconditionally
       0; // Default
 
    $br_tgt_pc[31:0] = $pc + $imm;
+   $jalr_tgt_pc[31:0] = $src1_value + $imm; // jump-and-link-register target address
 
    // Assert these to end simulation (before Makerchip cycle limit).
    //*passed = 1'b0;
