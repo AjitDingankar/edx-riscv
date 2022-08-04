@@ -116,7 +116,7 @@
    $is_or    = $dec_bits ==? 11'b0_110_0110011;
    $is_and   = $dec_bits ==? 11'b0_111_0110011;
 
-   `BOGUS_USE($is_load_instr)
+   // `BOGUS_USE($is_load)
    $is_load = ($opcode == 7'b00000_11);
 
    // ALU
@@ -131,7 +131,7 @@
    $srai_result[63:0] = $sext_src1 >> $imm[4:0];
 
    $result[31:0] =
-      $is_addi ? $src1_value + $imm :
+      ($is_addi || $is_load || $is_s_instr) ? $src1_value + $imm :
       $is_andi ? $src1_value & $imm :
       $is_ori  ? $src1_value | $imm :
       $is_xori ? $src1_value ^ $imm :
@@ -174,14 +174,16 @@
    $br_tgt_pc[31:0] = $pc + $imm;
    $jalr_tgt_pc[31:0] = $src1_value + $imm; // jump-and-link-register target address
 
+   // Mux data loaded from memory or ALU computation
+   $reg_wr_value[31:0] = $is_load ? $ld_data : $result;
+
    // Assert these to end simulation (before Makerchip cycle limit).
    //*passed = 1'b0;
    m4+tb()
    *failed = *cyc_cnt > M4_MAX_CYC;
    
-   m4+rf(32, 32, $reset, $rd_valid, $rd[4:0], $result[31:0], $rs1_valid, $rs1[4:0], $src1_value, $rs2_valid, $rs2[4:0], $src2_value)
-   //m4+dmem(32, 32, $reset, $addr[4:0], $wr_en, $wr_data[31:0], $rd_en, $rd_data)
+   m4+rf(32, 32, $reset, $rd_valid, $rd[4:0], $reg_wr_value[31:0], $rs1_valid, $rs1[4:0], $src1_value, $rs2_valid, $rs2[4:0], $src2_value)
+   m4+dmem(32, 32, $reset, $result[6:2], $is_s_instr, $src2_value[31:0], $is_load, $ld_data)
    m4+cpu_viz()
 \SV
    endmodule
-   
